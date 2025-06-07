@@ -2,7 +2,7 @@
 from database import create_connection, reload_database_book, reload_database_loan, reload_database_reader
 def connect():
       # Tạo kết nối đến cơ sở dữ liệu SQLite
-    conn, cursor = create_connection("library11.db")
+    conn, cursor = create_connection("library.db")
     # Kiểm tra kết nối thành công hay không
     if not conn:
         print("Không thể kết nối đến cơ sở dữ liệu.")
