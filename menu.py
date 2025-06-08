@@ -11,16 +11,19 @@ def menu():
 #Các menu con 
 # Chức năng quản lý sách
 def book_management():
-    print("📚 Chọn chức năng quản lý sách")
-    print("1. Thêm sách")
-    print("2. Xóa sách")
-    print("3. Tìm kiếm sách")
-    print("4. Cập nhật thông tin sách")
-    print("5. Sắp xếp sách")
-    print("6. Xem danh sách các sách hiện tại")
-    print("7. Xuất dữ liệu sách sang file csv")
-    print("8. Trở về menu chính")
-    book_choice()
+    while True:
+        print("📚 Chọn chức năng quản lý sách")
+        print("1. Thêm sách")
+        print("2. Xóa sách")
+        print("3. Tìm kiếm sách")
+        print("4. Cập nhật thông tin sách")
+        print("5. Sắp xếp sách")
+        print("6. Xem danh sách các sách hiện tại")
+        print("7. Xuất dữ liệu sách sang file csv")
+        print("8. Trở về menu chính")
+        should_exit = book_choice()  # Trả về True nếu chọn 8
+        if should_exit:
+            break
 # Chức năng quản lý bạn đọc
 def reader_management():
     print("👥 Chọn chức năng quản lý bạn đọc")
