@@ -3,7 +3,7 @@ from main import connect
 from data_structures import HashTable, merge_sort, print_wrapped_table, yes_no
 from test_condition import test_reader
 import csv
-
+import sqlite3
 # Kết nối đến cơ sở dữ liệu
 connected, conn, cursor = connect()
 
@@ -63,13 +63,13 @@ def reader_choice():
             call_reader_management()
         elif ch == "8":
             print("🏠 Trở về menu chính.")
-            from main import main
-            main()
             break
+        break
+    return
 
 # Hàm thêm người đọc từ file csv
 def add_reader_file():
-    filename = input("Nhập tên file (VD: readerreader.csv): ").strip()
+    filename = input("✍️ Nhập tên file (VD: readerreader.csv): ").strip()
     try:
         with open(filename, newline='', encoding='utf-8-sig') as csvfile:
             readerss = csv.DictReader(csvfile)
@@ -82,8 +82,8 @@ def add_reader_file():
                     if not reader_table.search(reader_id):
                         reader_table.insert(reader_id, reader)
                         cursor.execute("""
-        INSERT INTO readers (reader_id, namename)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO readers (reader_id, name)
+        VALUES (?, ?)
     """, (reader_id, name))
                         print(f"✅ Thêm bạn đọc '{reader_id}' thành công.")
                         conn.commit()
@@ -98,15 +98,16 @@ def add_reader_file():
 
 # Hàm thêm người đọc từ màn hình
 def add_reader_terminal():
-    reader_id = input("Nhập MSSV làm reader_id: ").strip()
-    name = input("Nhập tên bạn đọc: ").strip()
+    reader_id = input("✍️ Nhập MSSV làm reader_id: ").strip()
+    name = input("✍️ Nhập tên bạn đọc: ").strip()
     if test_reader(reader_table, reader_id, name):
         reader = Reader(reader_id, name)
         reader_table.insert(reader_id, reader)
         cursor.execute("INSERT INTO readers (reader_id, name) VALUES (?, ?)", (reader_id, name))
         conn.commit()
         print("✅ Thêm bạn đọc thành công.")
-
+    else:
+        print("❌ Thêm bạn đọc không thành công")
 # Hàm gọi để thêm người đọc
 def add_reader():
     print("Chọn phương thức thêm người đọc:")
@@ -127,20 +128,33 @@ def add_reader():
 
 # Hàm xóa người đọc
 def delete_reader():
-    reader_id = input("Nhập mã bạn đọc cần xóa: ").strip()
-    if reader_table.search(reader_id):
-        reader_table.delete(reader_id)
-        cursor.execute("DELETE FROM readers WHERE reader_id = ?", (reader_id,))
-        conn.commit()
-        print("✅ Xóa bạn đọc thành công.")
-    else:
+    reader_id = input("✍️ Nhập mã bạn đọc cần xóa: ").strip()
+    if not reader_table.search(reader_id):
         print("❌ Không tìm thấy bạn đọc.")
+        if not yes_no():
+            call_reader_management()
+        return
+    # Kiểm tra xem bạn đọc này có đang mượn sách hay không
+    # Truy vấn bảng loans trong database
+    cursor.execute("SELECT COUNT(*) FROM loans WHERE reader_id = ? AND status = ?", (reader_id, "Đang mượn"))
+    borrowed_books_count = cursor.fetchone()[0]
+    if borrowed_books_count > 0:
+        print(f"❌ Bạn đọc '{reader_id}' đang mượn {borrowed_books_count} cuốn sách. Không thể xóa bạn đọc này khi còn sách đang mượn.")
+    else:
+        # Nếu không mượn sách, tiến hành xóa
+        reader_table.delete(reader_id)
+        try:
+            cursor.execute("DELETE FROM readers WHERE reader_id = ?", (reader_id,))
+            conn.commit()
+            print("✅ Xóa bạn đọc thành công.")
+        except sqlite3.Error as e:
+            print(f"❌ Lỗi khi xóa bạn đọc khỏi cơ sở dữ liệu: {e}")
     if not yes_no():
         call_reader_management()
-
+    else: delete_reader()
 # Hàm tìm kiếm người đọc theo mã bạn đọcđọc / Tên
 def search_reader():
-    keyword = input("Nhập từ khóa tìm kiếm theo mã bạn đọc hoặc tên: ").strip().lower()
+    keyword = input("✍️ Nhập từ khóa tìm kiếm theo mã bạn đọc hoặc tên: ").strip().lower()
     result = []
     for reader in reader_table.get_all_values():
         if keyword in reader.reader_id.lower() or keyword in reader.name.lower():
@@ -151,16 +165,16 @@ def search_reader():
         print("❌ Không tìm thấy bạn đọc nào.")
     if not yes_no():
         call_reader_management()
-
+    else: search_reader()
 # Hàm chỉnh sửa thông tin người đọc
 def update_reader():
-    reader_id = input("Nhập mã bạn đọc cần cập nhật: ").strip()
+    reader_id = input("✍️ Nhập mã bạn đọc cần cập nhật: ").strip()
     reader = reader_table.search(reader_id)
     if not reader:
         print("❌ Không tìm thấy bạn đọc.")
         return
     print(f"Thông tin hiện tại: Reader_ID = {reader.reader_id}, Tên = {reader.name}")
-    new_name = input("Nhập tên mới (Enter để giữ nguyên): ").strip()
+    new_name = input("✍️ Nhập tên mới (Enter để giữ nguyên): ").strip()
     if new_name:
         reader.name = new_name
         cursor.execute("UPDATE readers SET name = ? WHERE reader_id = ?", (new_name, reader_id))
@@ -171,7 +185,8 @@ def update_reader():
     reader_table.insert(reader.reader_id, reader)
     if not yes_no():
         call_reader_management()
-
+    else:
+        update_reader()
 # Hàm sắp xếp người đọc theo Mã bạn đọc/Tên
 def sort_readers():
     readers = reader_table.get_all_values()
@@ -189,13 +204,18 @@ def sort_readers():
         else:
             print("❌ Lựa chọn không hợp lệ. Hãy nhập lại.")
             continue
-    reverse = input("Sắp xếp giảm dần? (True/False): ").strip().lower() == "true"
+    check_reverse = input("Sắp xếp tăng dần? (y/n): ")
+    if check_reverse.strip().lower() == "n":
+        reverse = True
+    else:
+        reverse = False
     sorted_readers = merge_sort(readers, key_func, reverse=reverse)
     data = [[r.reader_id, r.name] for r in sorted_readers]
     print_wrapped_table(headers, data, col_widths)
     if not yes_no():
         call_reader_management()
-
+    else:
+        sort_readers()
 # Hàm biểu diễn bảng danh sách người đọc
 def display_readers():
     all_readers = reader_table.get_all_values()
