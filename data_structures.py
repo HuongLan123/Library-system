@@ -295,8 +295,8 @@ def merge_sort(arr, key_func, reverse=False):
     if len(arr) <= 1:
         return arr
     mid = len(arr) // 2
-    left = merge_sort(arr[:mid], key_func)
-    right = merge_sort(arr[mid:], key_func)
+    left = merge_sort(arr[:mid], key_func, reverse)
+    right = merge_sort(arr[mid:], key_func, reverse)
     return merge(left, right, key_func, reverse)
 
 # Gộp hai danh sách đã sắp xếp
