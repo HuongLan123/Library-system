@@ -69,9 +69,16 @@ class LoanManager:
         return max_id + 1
 
     # Hàm tạo phiếu mượn
-    def create_loan(self, reader_id, isbn, duedays):
+    def create_loan(self):
+        reader_id = input("✍️ Nhập mã bạn đọc: ").strip()
+        isbn = input("✍️ Nhập mã ISBN sách: ").strip()
+        duedays = int(input("✍️ Nhập số ngày mượn: ").strip() or 30)
         from test_condition import can_borrow
         if not can_borrow(self,reader_id, isbn): # Kiểm tra điều kiện trước khi tạo phiếu mượn
+            if not yes_no():
+                call_loan_management()
+            else:
+                self.create_loan()
             return
         loan_id = self.get_next_id()
         borrow_date = datetime.now()
@@ -88,9 +95,12 @@ class LoanManager:
         print("✅ Tạo phiếu mượn thành công.")
         if not yes_no():
             call_loan_management()
-    
+        else:
+            self.create_loan()
+        return True
     # Hàm trả sách
-    def return_book(self, loan_id):
+    def return_book(self):
+        loan_id = int(input("✍️ Nhập ID phiếu mượn: ").strip())
         record = self.tree.search(loan_id)
         if not record or record.status != "Đang mượn":
             print("❌ Không tìm thấy phiếu hoặc sách đã được trả.")
@@ -106,9 +116,11 @@ class LoanManager:
             print("✅ Trả sách thành công.")
         if not yes_no():
             call_loan_management()
-    
+        else:
+            self.return_book()
     # Hàm xóa phiếu mượn
-    def delete_loan(self, loan_id):
+    def delete_loan(self):
+        loan_id = int(input("✍️ Nhập ID phiếu mượn: ").strip())
         record = self.tree.search(loan_id)
         if not record or record.status == "Đang mượn":
             print("❌ Không thể xoá phiếu chưa trả.")
@@ -119,7 +131,8 @@ class LoanManager:
             print("✅ Xoá phiếu thành công.")
         if not yes_no():
             call_loan_management()
-
+        else:
+            self.delete_loan()
     # Hàm in danh sách phiếu mượn
     def view_loans(self):
         for loan in self.tree.inorder():
@@ -127,23 +140,27 @@ class LoanManager:
         call_loan_management()
 
     # Hàm lọc dữ liệu phiếu mượn theo bạn đọc
-    def filter_by_reader(self, reader_id):
+    def filter_by_reader(self):
+        reader_id = input("✍️ Nhập mã bạn đọc: ").strip()
         print(f"Lịch sử mượn của bạn đọc {reader_id}:")
         for loan in self.tree.inorder():
             if loan.reader_id == reader_id:
                 print(loan)
         if not yes_no():
             call_loan_management()
-    
+        else:
+            self.filter_by_reader()
     # Hàm lọc dữ liệu phiếu mượn theo sách
-    def filter_by_isbn(self, isbn):
+    def filter_by_isbn(self):
+        isbn = input("✍️ Nhập mã ISBN sách: ").strip()
         print(f"Lịch sử mượn của sách ISBN {isbn}:")
         for loan in self.tree.inorder():
             if loan.isbn == isbn:
                 print(loan)
         if not yes_no():
             call_loan_management()
-    
+        else:
+            self.filter_by_isbn()
     # Hàm in ra danh sách sách quá hạn
     def view_overdue(self):
         print("Danh sách sách quá hạn:")
@@ -159,43 +176,30 @@ def loan_choice():
     ch = input("👉 Nhập lựa chọn của bạn (1 - 9): ").strip()
     while True:
         if ch == "1":
-            reader_id = input("Mã bạn đọc: ").strip()
-            isbn = input("ISBN sách: ").strip()
-            duedays = int(input("Số ngày mượn: ").strip() or 30)
-            manager.create_loan(reader_id, isbn, duedays)
+            manager.create_loan()
         elif ch == "2":
-            loan_id = int(input("ID phiếu mượn: ").strip())
-            manager.return_book(loan_id)
-
+            manager.return_book()
         elif ch == "3":
-            loan_id = int(input("ID phiếu mượn cần xoá: ").strip())
-            manager.delete_loan(loan_id)
-
+            manager.delete_loan()
         elif ch == "4":
             manager.view_loans()
-
         elif ch == "5":
-            reader_id = input("Mã bạn đọc: ").strip()
-            manager.filter_by_reader(reader_id)
-
+            manager.filter_by_reader()
         elif ch == "6":
-            isbn = input("ISBN sách: ").strip()
-            manager.filter_by_isbn(isbn)
-
+            manager.filter_by_isbn()
         elif ch == "7":
             manager.view_overdue()
         elif ch == "8":
             export_to_csv(manager)
-            call_loan_management()
         elif ch == "9":
             print("🏠 Trở về menu chính.")
-            from main import main
-            main()
             break
         else:
             print("❌ Lựa chọn không hợp lệ. Hãy thử lại.")
             ch = input("👉 Nhập lựa chọn của bạn (1 - 9): ").strip()
             continue
+        break
+    return
 
 # Hàm xuất dữ liệu mượn trả sang file csvcsv
 def export_to_csv(self):
@@ -205,3 +209,4 @@ def export_to_csv(self):
         for loan in self.tree.inorder():
             writer.writerow([loan.loan_id, loan.reader_id, loan.isbn, format_datetime(loan.borrow_date), format_datetime(loan.due_date), format_datetime(loan.return_date), loan.status])
     print("✅ Xuất CSV", "Đã lưu file loan_export.csv")
+    call_loan_management()
