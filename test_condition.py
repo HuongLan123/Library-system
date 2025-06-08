@@ -49,11 +49,12 @@ def test_reader(reader_table, reader_id, name):
     # Kiểm tra về trống dữ liệu trong reader_id và name
     if not reader_id or not name:
         print("❌ Mã số sinh viên và tên không được để trống.")
-        return
+        return False
     # Kiểm tra sự tồn tại của bạn đọc trong bảng
     if reader_table.search(reader_id):
         print("❌ Bạn đọc đã tồn tại.")
-        return
+        return False
+    return True
     
 # Hàm kiểm tra điều kiện để tạo phiếu mượn
 def can_borrow(self, reader_id, isbn):
