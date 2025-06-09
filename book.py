@@ -4,6 +4,8 @@ from test_condition import test_book
 from main import connect
 import csv
 import sqlite3
+import locale
+locale.setlocale(locale.LC_ALL, 'vi_VN.UTF-8') 
 # Kết nối đến cơ sở dữ liệu SQLite
 connected, conn, cursor = connect()
 
@@ -86,12 +88,7 @@ def book_menu_no_key(ch):
     if ch == "1":  
         add_book()
     elif ch == "6":
-        print("✅ Danh sách các sách hiện tại")
-        books = book_table.get_all_values()
-        books_print = []
-        for book in books:
-            books_print.append(list(book.__dict__.values()))
-        print_wrapped_table(headers, books_print, col_widths)
+        display_book()
     elif ch == "7":
         export_to_csv()
     elif ch == "8":
@@ -118,7 +115,7 @@ def book_choice():
             print("❌ Lựa chọn không hợp lệ, vui lòng thử lại.")
             ch = input("👉 Nhập lựa chọn của bạn (1 - 8): ")
             continue
-        
+
         if ch in ["1", "6", "7", "8"]:
             should_break = book_menu_no_key(ch)
             if should_break:
@@ -350,11 +347,11 @@ def sort_books(key):
     if key == "1":
         key_func = lambda book: book.isbn
     elif key == "2" :
-        key_func = lambda book: book.title
+        key_func = lambda book: locale.strxfrm(book.title.split()[-1] if book.title else "")
     elif key == "3":
-        key_func = lambda book: book.genre
+        key_func = lambda book: locale.strxfrm(book.genre.split()[-1] if book.genre else "")
     elif key == "4":
-        key_func = lambda book: book.author
+        key_func = lambda book: locale.strxfrm(book.author.split()[-1] if book.author else "")
     sorted_books = merge_sort(books, key_func, reverse)
     print("\n ✅ Danh sách sách sau khi sắp xếp:")
     books_print = []
@@ -366,6 +363,14 @@ def sort_books(key):
     else:
         key, key_data = key_choice("5")
         book_menu_with_key("5", key, key_data)
+
+def display_book():
+    print("✅ Danh sách các sách hiện tại")
+    books = book_table.get_all_values()
+    books_print = []
+    for book in books:
+        books_print.append(list(book.__dict__.values()))
+    print_wrapped_table(headers, books_print, col_widths)
 # Hàm xuất file csv
 def export_to_csv():
     try:
@@ -376,4 +381,4 @@ def export_to_csv():
                 writer.writerow([book.isbn, book.title, book.genre, book.author, book.added_quantity, book.quantity, book.available_quantity, book.borrowed_quantity])
         print("✅ Xuất CSV", "Đã lưu file books_export.csv")
     except Exception as e:
-        print("❌ Lỗi do {e}")
+        print(f"❌ Lỗi do {e}")
