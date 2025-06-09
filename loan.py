@@ -203,10 +203,13 @@ def loan_choice():
 
 # Hàm xuất dữ liệu mượn trả sang file csvcsv
 def export_to_csv(self):
-    with open("loan_export.csv", "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Loan ID",  "Reader", "ISBN","Borrowed","Due date","Returned","Status"])
-        for loan in self.tree.inorder():
-            writer.writerow([loan.loan_id, loan.reader_id, loan.isbn, format_datetime(loan.borrow_date), format_datetime(loan.due_date), format_datetime(loan.return_date), loan.status])
-    print("✅ Xuất CSV", "Đã lưu file loan_export.csv")
-    call_loan_management()
+    try: 
+        with open("loan_export.csv", "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Loan ID",  "Reader", "ISBN","Borrowed","Due date","Returned","Status"])
+            for loan in self.tree.inorder():
+                writer.writerow([loan.loan_id, loan.reader_id, loan.isbn, format_datetime(loan.borrow_date), format_datetime(loan.due_date), format_datetime(loan.return_date), loan.status])
+        print("✅ Xuất CSV", "Đã lưu file loan_export.csv")
+        call_loan_management()
+    except Exception as e:
+        print(f"❌ Lỗi do {e}")
