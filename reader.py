@@ -4,7 +4,8 @@ from data_structures import HashTable, merge_sort, print_wrapped_table, yes_no
 from test_condition import test_reader
 import csv
 import sqlite3
-# Kết nối đến cơ sở dữ liệu
+import locale
+locale.setlocale(locale.LC_ALL, 'vi_VN.UTF-8') 
 connected, conn, cursor = connect()
 
 # Hàm gọi lại danh sách lựa chọn chức năng quản lý người đọc: reader_management()
@@ -60,13 +61,21 @@ def reader_choice():
             display_readers()
         elif ch == "7":
             export_to_csv()
-            call_reader_management()
         elif ch == "8":
             print("🏠 Trở về menu chính.")
             break
         break
     return
 
+def save_reader_database(reader_table, reader_id, name):
+    if test_reader(reader_table, reader_id, name):
+        reader = Reader(reader_id, name)
+        reader_table.insert(reader_id, reader)
+        cursor.execute("INSERT INTO readers (reader_id, name) VALUES (?, ?)", (reader_id, name))
+        conn.commit()
+        print("✅ Thêm bạn đọc thành công.")
+    else:
+        print("❌ Thêm bạn đọc không thành công")
 # Hàm thêm người đọc từ file csv
 def add_reader_file():
     filename = input("✍️ Nhập tên file (VD: readerreader.csv): ").strip()
@@ -76,19 +85,7 @@ def add_reader_file():
             for row in readerss:
                 reader_id = row["Mã người đọc"]
                 name = row["Họ và tên"]
-                test_reader = test_reader(reader_table, reader_id, name)
-                if test_reader:
-                    reader = Reader(reader_id, name)
-                    if not reader_table.search(reader_id):
-                        reader_table.insert(reader_id, reader)
-                        cursor.execute("""
-        INSERT INTO readers (reader_id, name)
-        VALUES (?, ?)
-    """, (reader_id, name))
-                        print(f"✅ Thêm bạn đọc '{reader_id}' thành công.")
-                        conn.commit()
-                    else:
-                        print(f"❌ Bạn đọc có mã bạn đọc '{reader_id}' đã tồn tại.")
+                save_reader_database(reader_table, reader_id, name)
     except FileNotFoundError:
         print(f"❌ Không tìm thấy file '{filename}'")
         return 
@@ -100,15 +97,7 @@ def add_reader_file():
 def add_reader_terminal():
     reader_id = input("✍️ Nhập MSSV làm reader_id: ").strip()
     name = input("✍️ Nhập tên bạn đọc: ").strip()
-    if test_reader(reader_table, reader_id, name):
-        reader = Reader(reader_id, name)
-        reader_table.insert(reader_id, reader)
-        cursor.execute("INSERT INTO readers (reader_id, name) VALUES (?, ?)", (reader_id, name))
-        conn.commit()
-        print("✅ Thêm bạn đọc thành công.")
-    else:
-        print("❌ Thêm bạn đọc không thành công")
-# Hàm gọi để thêm người đọc
+    save_reader_database(reader_table, reader_id, name)
 def add_reader():
     print("Chọn phương thức thêm người đọc:")
     print("1. Thêm người đọc từ file")
@@ -199,7 +188,7 @@ def sort_readers():
             key_func = lambda r: r.reader_id
             break
         elif get_choice.strip() == "2":
-            key_func = lambda r: r.name
+            key_func = lambda r: locale.strxfrm(r.name.split()[-1] if r.name else "")
             break
         else:
             print("❌ Lựa chọn không hợp lệ. Hãy nhập lại.")
@@ -225,9 +214,13 @@ def display_readers():
 
 # Hàm xuất dữ liệu người đọc sang file csv
 def export_to_csv():
-    with open("readers_export.csv", "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Mã người đọc","Họ và tên"])
-        for reader in reader_table.get_all_values():
-            writer.writerow([reader.reader_id, reader.name])
-    print("Xuất CSV", "Đã lưu file reader_export.csv")
+    try: 
+        with open("readers_export.csv", "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Mã người đọc","Họ và tên"])
+            for reader in reader_table.get_all_values():
+                writer.writerow([reader.reader_id, reader.name])
+        print("✅ Xuất CSV", "Đã lưu file reader_export.csv")
+        call_reader_management()
+    except Exception as e:
+        print(f"❌ Lỗi do {e}")
